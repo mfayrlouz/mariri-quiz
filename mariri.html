@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How well do you Mariam?</title>
+ 
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Charm:wght@400;700&family=Playfair:ital,opsz,wdth,wght@1,5..1200,94.5,481&display=swap" rel="stylesheet">
+
+<style>
+body{
+margin:0;
+min-height:100vh;
+font-family:'Nunito',sans-serif;
+background:linear-gradient(135deg,#fce4ff,#f3d6ff,#ffffff);
+overflow-x:hidden;
+text-align:center;
+position:relative;
+z-index:1;
+}
+.mariamPhoto{
+width:220px;
+height:auto;
+display:block;
+margin:0 auto 20px auto;
+border-radius:15px;
+}
+/* Звёздочки с темным цветом и контуром */
+.corner-star {
+  width: 55px;
+  height: 55px;
+  background: #FFD700; /* основной цвет звезды */
+  clip-path: polygon(
+    50% 0%, 61% 35%, 98% 35%, 
+    68% 57%, 79% 91%, 50% 70%, 
+    21% 91%, 32% 57%, 2% 35%, 
+    39% 35%
+  ); /* 5-конечная звезда */
+  border: 3px solid #E6B800; /* обводка на несколько оттенков темнее */
+  position: absolute;
+}
+.top-left { top: 10px; left: 10px; }
+.top-right { top: 10px; right: 10px; }
+.bottom-left { bottom: 10px; left: 10px; }
+.bottom-right { bottom: 10px; right: 10px; }
+
+.spark{
+position:fixed;
+top:0;
+width:4px;
+height:4px;
+background:white;
+border-radius:50%;
+pointer-events:none;
+z-index:0;
+animation:fall linear infinite;
+}
+
+@keyframes fall{
+0%{transform:translateY(-10px);opacity:1;}
+100%{transform:translateY(100vh);opacity:0;}
+}
+
+.container{
+max-width:650px;
+margin:40px auto;
+background:white;
+padding:30px;
+border-radius:25px;
+box-shadow:0 15px 40px rgba(150,80,200,0.2);
+position:relative;
+z-index:2;
+animation:fadeIn 0.6s ease;
+}
+
+@keyframes fadeIn{
+from{opacity:0; transform:translateY(15px);}
+to{opacity:1; transform:translateY(0);}
+ }
+h1{
+  font-family: 'Playfair Display', serif;
+  font-style: italic; /* именно тут включаем италик */
+  color:#7a3db8;
+}
+
+.progressWrapper{
+height:6px;
+background:#f3d6ff;
+border-radius:10px;
+margin:15px 0;
+overflow:hidden;
+}
+
+.progressBar{
+height:100%;
+width:0%;
+background:#c084f5;
+transition:0.4s;
+}
+  
+button{
+display:block;
+width:100%;
+margin:10px 0;
+padding:12px;
+border:none;
+border-radius:14px;
+background:#e9c8ff;
+font-weight:600;
+cursor:pointer;
+transition:0.3s;
+}
+
+button:hover{
+transform:scale(1.04);
+background:#ddb4ff;
+}
+
+.correct{background:#baf5d4!important;}
+.wrong{background:#ffc2d6!important;}
+
+input{
+padding:12px;
+border-radius:14px;
+border:1px solid #e9c8ff;
+width:70%;
+}
+
+.hidden{display:none;}
+
+.titleBox{
+margin-top:20px;
+padding:20px;
+border-radius:18px;
+background:linear-gradient(135deg,#f3d6ff,#ffffff);
+font-family:'Cormorant Garamond',serif;
+font-size:22px;
+color:#6a2ea6;
+}
+
+.level{
+margin-top:10px;
+font-weight:600;
+font-size:16px;
+color:#a64ac9;
+}
+
+.crown{
+color:#ffce00;
+font-size:20px;
+margin-left:6px;
+}
+</style>
+</head>
+<body>
+
+<audio id="clickSound">
+<source src="https://cdn.pixabay.com/audio/2022/03/15/audio_115b9bfa3f.mp3" type="audio/mpeg">
+</audio>
+<div class="container">
+  <img src="https://i.ibb.co.com/SXNyg1J4/IMG-7767-2.jpg" class="mariamPhoto" id="startPhoto"> 
+<h1>How well do you know Mariam?</h1>
+
+
+<div id="start">
+  <input id="username" placeholder="Введите никнейм">
+  <div id="nameError" style="color:red; font-size:14px; margin-top:5px; display:none;">Напиши имя, бро</div>
+  <button onclick="startQuiz()">Начать</button>
+  <button id="adminBtn" class="hidden" onclick="showLeaderboard()">Перейти к рейтингам (Admin)</button>
+</div>
+
+<div id="quiz" class="hidden">
+<div class="progressWrapper">
+<div class="progressBar" id="progressBar"></div>
+</div>
+
+<h3 id="question"></h3>
+<div id="answers"></div>
+<div class="level" id="levelText"></div>
+</div>
+
+<div id="result" class="hidden">
+<h2 id="scoreText"></h2>
+<div class="titleBox" id="titleText"></div>
+<div id="resultImage" style="margin-top:15px;"></div>
+<button onclick="restart()">Пройти снова</button>
+</div>
+
+<div id="userLeaderboard" class="hidden">
+  <h2>Closest to Mariam 💫</h2>
+  <ul id="userRanking" style="list-style:none; padding:0; max-width:500px; margin:0 auto;"></ul>
+  <button onclick="backToStart()">Назад</button>
+</div>
+
+<div id="adminLeaderboard" class="hidden">
+  <h2>Админский рейтинг</h2>
+  <ul id="adminRanking" style="list-style:none; padding:0; max-width:500px; margin:0 auto;"></ul>
+  <button onclick="backToStart()">Назад</button>
+</div>
+  
+<div class="stars-container">
+  <div class="corner-star top-left"></div>
+  <div class="corner-star top-right"></div>
+  
+</div>
+ 
+</div>
+
+<script>
+  
+function goToStart(){
+  document.getElementById("leaderboard").classList.add("hidden");
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("result").classList.add("hidden");
+  document.getElementById("start").classList.remove("hidden");
+  document.getElementById("username").value = ""; 
+  current = 0;
+  score = 0;
+}
+const resultImages = {
+8: "https://i.pinimg.com/1200x/90/7a/48/907a48ae39c628499891149d69609de4.jpg",   
+  16: "https://i.pinimg.com/736x/20/2d/2a/202d2a49d6cbfe51397623fcd1a21781.jpg",  // <= 9-12
+  19: "https://i.pinimg.com/736x/52/44/79/5244796fec46e7e8c6759fc6eb34024b.jpg", // <= 13-19
+  21: "https://i.pinimg.com/736x/eb/2d/47/eb2d4779100b107cd03f835b2b9f2b6f.jpg",
+  25: "https://i.pinimg.com/736x/5d/02/26/5d022635cde34f918fd68285009edf75.jpg", 
+  27: "https://i.pinimg.com/736x/5d/02/26/5d022635cde34f918fd68285009edf75.jpg"   
+};
+
+
+// Категории A / B / C с вопросами
+const questions=[
+{level:"A",q:"Какое мое любимое время года?",a:["Осень","Зима","Лето","Весна"],c:[1]},
+{level:"A",q:"Какое мое  самое не любимое время года?",a:["Осень","Зима","Лето","Весна"],c:[0]},
+{level:"A",q:"Кто мой любимый певец?",a:["Sombr","Lana del Rey","Sabrina Carpenter","Olivia Rodrigo"],c:[1]},
+{level:"A",q:"Каким спортом я мечтаю заниматься профессиально?",a:["Волейбол","Фигурное катание","Лыжи","Танцы"],c:[1]},
+{level:"A",q:"Какой мой любимый цвет?",a:["Голубой","Розовый","Фиолетовый","Синий"],c:[2]},
+{level:"A",q:"Какой мой любимый сериал?",a:["Ты","Сплетница","Дневники вампира","Я никогда не…"],c:[2]},
+{level:"A",q:"Какая моя любимая группа?",a:["Radiohead","The neighbourhood","TV girl","The Smiths","Abba"],c:[1]},
+{level:"A",q:"Где бы я хотела жить?",a:["Париж","Токио","Лондон","Нью Йорк"],c:[3]},
+{level:"A",q:"Какую суперспособность я бы хотела?",a:["Телепортация","Управление временем","Летать","Читать мысли"],c:[1]},
+{level:"A",q:"Кто мой любимый рэпер?",a:["Doja Cat","Eminem","Kendrick Lamar","Lil Wayne"],c:[0]},
+{level:"A",q:"Какой мой любимый фрукт?",a:["Яблоко","Мандарин","Груша","Банан"],c:[0]},
+{level:"A",q:"Что мне больше всего нравиться?",a:["Луна","Солнце","Звезда","Радуга"],c:[2]},
+  
+
+{level:"B",q:"Какой мой любимый напиток?",a:["Матча","Кофе","Милкшейк","Чай"],c:[0]},
+{level:"B",q:"Что я никогда не делала?",a:["Не материлась","Не дралась","Не влюблялась","Не водила машину","Не убегала от собаки"],c:[3]},
+{level:"B",q:"Кто мой любимый ютуб блогер?",a:["Настя Джексон","Брайн Мапс","Эксаил","Анастасис"],c:[0]},
+{level:"B",q:"Какая моя любимая шоколадка?",a:["Ozera","Kinder Country","Сникерс","Твикс"],c:[0]},
+{level:"B",q:"Кто моя любимая диснеевская принцесса?",a:["Эльза","Бель","Рапунцель","Ариель"],c:[1]},
+{level:"B",q:"Любимое число?",a:["7","11","4","9"],c:[3]},
+{level:"B",q:"Любимый предмет?",a:["Всемирная история","Информатика","Английский","Литература"],c:[2]},
+{level:"B",q:"Любимая форма имени?",a:["Мари","Макона (Мако)","Маринка","Марико"],c:[1,2]},
+{level:"B",q:"Какой язык я бы хотела выучить?",a:["Французский","Итальянский","Испанский","Японский"],c:[0]},
+{level:"B",q:"Кто мой любимый актер?",a:["Пэн Бэджли","Сэм Клафлин","Ли Чон Сок","Дэйв Франко"],c:[1,2]},
+{level:"B",q:"Какая моя любимая еда?",a:["Паста","Беш","Плов","Макароны"],c:[0]},
+{level:"B",q:"Какой мой любимый фрукт?",a:["Банан","Мандарин","Яблоко","Персик"],c:[2]},
+  
+{level:"C",q:"На какую букву начинается моя фамилия?",a:["А","Т","К","В"],c:[2]},
+{level:"C",q:"Какой у меня рост?",a:["175 см","170 см","174 см","171 см"],c:[2]},
+{level:"C",q:"Какой у меня ру?",a:["Жалайыр","Албан","Найман","Аргын","Дулат"],c:[3]},
+{level:"C",q:"Кем я хотела стать в детстве?",a:["Врач","Программист","Учитель","Повар"],c:[0]},
+{level:"C",q:"Какие у меня любимые цветы?",a:["Пионы","Лилии","Лаванда","Сирень"],c:[1]},
+{level:"C",q:"Чего я боюсь?",a:["Крыс","Собак","Кошек","Пауков"],c:[0]},
+{level:"C",q:"Кто мой типаж?",a:["Slavic","Latino","Roman","Asian","Turkish"],c:[0],points:2}
+];
+
+
+let current=0;
+let score=0;
+let name="";
+
+function startQuiz(){
+  // сначала проверяем админа
+ name = document.getElementById("username").value.trim();
+  let lb = JSON.parse(localStorage.getItem("lb")) || [];
+
+// проверяем есть ли уже такой ник
+if(lb.some(player => player.name === name)){
+  alert("Этот ник уже проходил тест 🙂");
+  return;
+}
+
+if(name === "mfayrlouz.admin9"){
+  document.getElementById("start").classList.add("hidden");
+  showAdminLeaderboard();
+  return;
+}
+
+// проверяем проходил ли пользователь тест
+  name = document.getElementById("username").value.trim();
+  
+  if(!name || name.length < 4 || name.includes(" ")){
+    alert("Напиши имя, бро");
+    return;
+  }
+  document.getElementById("startPhoto").style.display = "none";
+
+  // проверка админ-пароля
+  if(name === "mfayrlouz.admin9"){
+    document.getElementById("start").classList.add("hidden");
+    showAdminLeaderboard(); // сразу открываем редактируемый рейтинг
+    return;
+  }
+
+  document.getElementById("start").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+  showQuestion();
+}
+
+
+function showQuestion(){
+let q=questions[current];
+document.getElementById("question").innerText=q.q;
+document.getElementById("levelText").innerText="Категория: "+q.level;
+updateProgress();
+
+let ans=document.getElementById("answers");
+ans.innerHTML="";
+q.a.forEach((text,i)=>{
+let btn=document.createElement("button");
+btn.innerText=text;
+btn.onclick=()=>selectAnswer(btn,i);
+ans.appendChild(btn);
+});
+}
+
+function updateProgress(){
+let percent=(current/questions.length)*100;
+document.getElementById("progressBar").style.width=percent+"%";
+}
+
+function selectAnswer(btn,i){
+document.getElementById("clickSound").play();
+
+let q=questions[current];
+let buttons=document.querySelectorAll("#answers button");
+buttons.forEach((b,index)=>{
+if(q.c.includes(index))b.classList.add("correct");
+else b.classList.add("wrong");
+b.disabled=true;
+});
+if(q.c.includes(i))score++;
+
+setTimeout(()=>{
+current++;
+if(current<questions.length){
+showQuestion();
+}else{
+endQuiz();
+}
+},800);
+}
+
+function getTitle(score){
+if(score<=8)return "Нужно по лучше узнать друг-друга";
+if(score<=16)return "Оч хорошо, но давай общаться больше!";
+if(score<=19)return "Очень ценю тебя🥹"
+if(score<=21)return "Надеюсь я знаю тебя так же хорошо как ты меня 🦢";
+if(score<=25)return "soulmate 🪷";
+if(score<=27)return "100% SOULMATE ⭐️";
+ 
+}
+  
+function endQuiz(){
+document.getElementById("quiz").classList.add("hidden");
+document.getElementById("result").classList.remove("hidden");
+document.getElementById("scoreText").innerText=name+" — "+score+" / "+questions.length;
+document.getElementById("titleText").innerText=getTitle(score);
+  let imgDiv = document.getElementById("resultImage");
+imgDiv.innerHTML = "";
+
+let imgSrc;
+if(score <= 8) imgSrc = resultImages[8];
+else if(score <= 16) imgSrc = resultImages[16];
+else if(score <= 19) imgSrc = resultImages[19];
+else if(score <= 21) imgSrc = resultImages[21];
+else if(score <= 25) imgSrc = resultImages[25];
+else imgSrc = resultImages[27];
+
+let img = document.createElement("img");
+img.src = imgSrc;
+img.style.width = "200px";
+img.style.borderRadius = "15px";
+img.style.marginTop = "10px";
+imgDiv.appendChild(img);
+// для пользователей
+let btnUserLB = document.createElement("button");
+btnUserLB.innerText="Посмотреть рейтинг";
+btnUserLB.onclick = showUserLeaderboard;
+document.getElementById("result").appendChild(btnUserLB);
+
+
+// для админа уже есть твоя скрытая кнопка adminBtn
+let lb=JSON.parse(localStorage.getItem("lb"))||[];
+lb.push({name,score});
+lb.sort((a,b)=>b.score-a.score);
+localStorage.setItem("lb",JSON.stringify(lb));
+localStorage.setItem("quizTaken","true");
+}
+  
+function showUserLeaderboard(){
+  document.getElementById("result").classList.add("hidden");
+  document.getElementById("quiz").classList.add("hidden");
+ 
+document.getElementById("userLeaderboard").classList.remove("hidden");
+
+  let lb = JSON.parse(localStorage.getItem("lb")) || [];
+  lb.sort((a,b)=>b.score - a.score); // сортируем по очкам
+  let list = document.getElementById("userRanking");
+  list.innerHTML = "";
+
+  lb.forEach((p,i)=>{
+    let li = document.createElement("li");
+    let crown = "";
+    if(i===0) crown="👑";
+    else if(i===1) crown="👑";
+    else if(i===2) crown="👑";
+
+    li.innerHTML = `<div style="display:flex; justify-content:space-between; padding:8px 12px; background:linear-gradient(135deg,#fce4ff,#f3d6ff); border-radius:12px; margin-bottom:6px; font-weight:600;">
+                     <span>${i+1} ${crown} ${p.name}</span>
+                     <span>${p.score} баллов</span>
+                    </div>`;
+    list.appendChild(li);
+  });
+}
+function showAdminLeaderboard(){
+  document.getElementById("result").classList.add("hidden");
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("adminLeaderboard").classList.remove("hidden");
+
+  let lb = JSON.parse(localStorage.getItem("lb")) || [];
+  let list = document.getElementById("adminRanking");
+  list.innerHTML = "";
+  
+  lb.forEach((p,i)=>{
+    let li = document.createElement("li");
+    li.style.marginBottom="6px";
+
+    li.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:linear-gradient(135deg,#f3d6ff,#ffffff); border-radius:12px; font-weight:600;">
+        <span>${i+1}. ${p.name} — ${p.score} баллов</span>
+        <span>
+          <button onclick="editScore(${i})">Изменить</button>
+          <button onclick="deleteUser(${i})">Удалить</button>
+        </span>
+      </div>`;
+    list.appendChild(li);
+  });
+}
+
+// Функция редактирования очков
+function editScore(index){
+  let lb = JSON.parse(localStorage.getItem("lb")) || [];
+  let newScore = prompt("Введите новые баллы для " + lb[index].name, 
+ lb[index].score);
+  if(newScore!==null && !isNaN(newScore)){
+    lb[index].score = parseInt(newScore);
+    localStorage.setItem("lb", JSON.stringify(lb));
+    showAdminLeaderboard();
+  }
+}
+
+// Функция удаления участника
+function deleteUser(index){
+  let lb = JSON.parse(localStorage.getItem("lb")) || [];
+  if(confirm("Удалить " + lb[index].name + " из рейтинга?")){
+    lb.splice(index,1);
+    localStorage.setItem("lb", JSON.stringify(lb));
+    showAdminLeaderboard();
+  }
+}
+
+  
+function restart(){
+current=0;
+score=0;
+document.getElementById("result").classList.add("hidden");
+document.getElementById("quiz").classList.remove("hidden");
+showQuestion();
+}
+function backToStart(){
+  document.getElementById("userLeaderboard").classList.add("hidden");
+  document.getElementById("adminLeaderboard").classList.add("hidden");
+  document.getElementById("start").classList.remove("hidden");
+}
+  
+// блестки теперь строго фон
+setInterval(()=>{
+let s=document.createElement("div");
+s.className="spark";
+s.style.left=Math.random()*100+"vw";
+s.style.animationDuration=(Math.random()*3+2)+"s";
+document.body.appendChild(s);
+setTimeout(()=>s.remove(),5000);
+},200);
+
+</script>
+</body>
+</html>
+
+
